@@ -100,9 +100,7 @@ namespace KeyBloxManager
 
         private static int CreateNewStack()
         {
-            var stackFactory = new StackFactory();
-            var stack = stackFactory.Create(new int[] { 0, 0, 0, 0, 0, 0, 0, 0 });
-            return stack;
+            return TetrisStack.CreateStack(new int[] { 0, 0, 0, 0, 0, 0, 0, 0 });
         }
 
         private static TetrisDrop GetBestDrop(Ranker ranker, IEnumerable<TetrisDrop> possibleDrops)
@@ -287,8 +285,6 @@ namespace KeyBloxManager
 
         public static int UpdateStack(int[] columns)
         {
-            var stackFactory = new StackFactory();
-
             var stack = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 
             for (int i = 1; i < columns.Length; i++)
@@ -306,7 +302,7 @@ namespace KeyBloxManager
                 }
             }
 
-            return stackFactory.Create(stack);
+            return TetrisStack.CreateStack(stack);
         }
 
         public static void ClearLines(int[] columns, int n)
