@@ -16,7 +16,6 @@ namespace TetrisPageRank.Models
 
         public void Initialize()
         {
-            var stackFactory = new StackFactory();
             stackRanks = new Dictionary<int, float>(stackCount);
             var randomizer = RandomizerFactory.GetRandomizer(new FieldOptionsFloat() 
             { 
@@ -41,7 +40,7 @@ namespace TetrisPageRank.Models
                                     {
                                         for (int h = -4; h <= 4; h++)
                                         {
-                                            stackRanks.Add(stackFactory.Create(a, b, c, d, e, f, g, h), randomizer.Generate().Value);
+                                            stackRanks.Add(TetrisStack.CreateStack(a, b, c, d, e, f, g, h), randomizer.Generate().Value);
                                         }
                                     }
                                 }
