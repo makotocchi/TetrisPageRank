@@ -1,13 +1,26 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using TetrisPageRank.Models;
 
 namespace TetrisPageRank.Controllers
 {
     public class PieceOController : IPieceController
     {
-        public IEnumerable<int> GetPossibleStacks(int stack)
+        public List<int> GetPossibleStacks(int stack)
         {
-            var digits = TetrisStack.GetReadableDigits(stack);
+            var possibleStacks = new List<int>();
+
+            ReadOnlySpan<int> digits = stackalloc[]
+            {
+                TetrisStack.GetReadableDigit(stack, 0),
+                TetrisStack.GetReadableDigit(stack, 1),
+                TetrisStack.GetReadableDigit(stack, 2),
+                TetrisStack.GetReadableDigit(stack, 3),
+                TetrisStack.GetReadableDigit(stack, 4),
+                TetrisStack.GetReadableDigit(stack, 5),
+                TetrisStack.GetReadableDigit(stack, 6),
+                TetrisStack.GetReadableDigit(stack, 7)
+            };
 
             for (int i = 0; i <= 7; i++)
             {
@@ -16,13 +29,27 @@ namespace TetrisPageRank.Controllers
                     continue;
                 }
 
-                yield return Drop0(stack, i);
+                possibleStacks.Add(Drop0(stack, i));
             }
+
+            return possibleStacks;
         }
 
-        public IEnumerable<TetrisDrop> GetPossibleDrops(int stack)
+        public List<TetrisDrop> GetPossibleDrops(int stack)
         {
-            var digits = TetrisStack.GetReadableDigits(stack);
+            var possibleDrops = new List<TetrisDrop>();
+
+            ReadOnlySpan<int> digits = stackalloc[]
+            {
+                TetrisStack.GetReadableDigit(stack, 0),
+                TetrisStack.GetReadableDigit(stack, 1),
+                TetrisStack.GetReadableDigit(stack, 2),
+                TetrisStack.GetReadableDigit(stack, 3),
+                TetrisStack.GetReadableDigit(stack, 4),
+                TetrisStack.GetReadableDigit(stack, 5),
+                TetrisStack.GetReadableDigit(stack, 6),
+                TetrisStack.GetReadableDigit(stack, 7)
+            };
 
             for (int i = 0; i <= 7; i++)
             {
@@ -31,8 +58,10 @@ namespace TetrisPageRank.Controllers
                     continue;
                 }
 
-                yield return new TetrisDrop(Drop0(stack, i), Orientation.DEGREES_0, i, Piece.O);
+                possibleDrops.Add(new TetrisDrop(Drop0(stack, i), Orientation.DEGREES_0, i, Piece.O));
             }
+
+            return possibleDrops;
         }
 
         private int Drop0(int stack, int column)
@@ -50,7 +79,7 @@ namespace TetrisPageRank.Controllers
             return stack;
         }
 
-        private bool IsDrop0Possible(int[] readableDigits, int column)
+        private bool IsDrop0Possible(ReadOnlySpan<int> readableDigits, int column)
         {
             return readableDigits[column] == 0;
         }

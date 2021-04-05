@@ -43,7 +43,7 @@ namespace KeyBloxManager
                     }
                 }
 
-                var possibleDrops = piece.Controller.GetPossibleDrops(stack);
+                List<TetrisDrop> possibleDrops = piece.Controller.GetPossibleDrops(stack);
 
                 Piece.AllDictionary.TryGetValue(keyblox.GetHeldPiece().GetName(), out var heldPiece);
 
@@ -59,11 +59,11 @@ namespace KeyBloxManager
                 
                 if (heldPiece != null)
                 {
-                    possibleDrops = possibleDrops.Concat(heldPiece.Controller.GetPossibleDrops(stack));
+                    possibleDrops.AddRange(heldPiece.Controller.GetPossibleDrops(stack));
                 }
                 else
                 {
-                    possibleDrops = possibleDrops.Concat(lookahead[0].Controller.GetPossibleDrops(stack));
+                    possibleDrops.AddRange(lookahead[0].Controller.GetPossibleDrops(stack));
                 }
 
                 TetrisDrop bestDrop = GetBestDrop(ranker, possibleDrops);
@@ -100,7 +100,7 @@ namespace KeyBloxManager
 
         private static int CreateNewStack()
         {
-            return TetrisStack.CreateStack(new int[] { 0, 0, 0, 0, 0, 0, 0, 0 });
+            return TetrisStack.CreateStack(0, 0, 0, 0, 0, 0, 0, 0);
         }
 
         private static TetrisDrop GetBestDrop(Ranker ranker, IEnumerable<TetrisDrop> possibleDrops)
@@ -302,7 +302,7 @@ namespace KeyBloxManager
                 }
             }
 
-            return TetrisStack.CreateStack(stack);
+            return TetrisStack.CreateStack(stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7]);
         }
 
         public static void ClearLines(int[] columns, int n)

@@ -1,36 +1,42 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 
 namespace TetrisPageRank
 {
     public static class TetrisStack
     {
-        public static int CreateStack(params int[] digits)
+        public static int CreateStack(int a, int b, int c, int d, int e, int f, int g, int h)
         {
-            return digits[0] + 4 << 28 |
-                   digits[1] + 4 << 24 |
-                   digits[2] + 4 << 20 |
-                   digits[3] + 4 << 16 |
-                   digits[4] + 4 << 12 |
-                   digits[5] + 4 << 8 |
-                   digits[6] + 4 << 4 |
-                   digits[7] + 4;
+            return a + 4 << 28 |
+                   b + 4 << 24 |
+                   c + 4 << 20 |
+                   d + 4 << 16 |
+                   e + 4 << 12 |
+                   f + 4 << 8 |
+                   g + 4 << 4 |
+                   h + 4;
         }
 
-        public static int[] GetReadableDigits(int stack)
+        public static int GetReadableDigit(int stack, int i)
         {
-            return new[]
-            {
-                (stack >> 28 & 0xF) - 4,
-                (stack >> 24 & 0xF) - 4,
-                (stack >> 20 & 0xF) - 4,
-                (stack >> 16 & 0xF) - 4,
-                (stack >> 12 & 0xF) - 4,
-                (stack >> 8 & 0xF) - 4,
-                (stack >> 4 & 0xF) - 4,
-                (stack & 0xF) - 4
-            };
+            return (stack >> (28 - i * 4) & 0xF) - 4;
         }
+
+        //public static int[] GetReadableDigits(int stack)
+        //{
+        //    return new[]
+        //    {
+        //        (stack >> 28 & 0xF) - 4,
+        //        (stack >> 24 & 0xF) - 4,
+        //        (stack >> 20 & 0xF) - 4,
+        //        (stack >> 16 & 0xF) - 4,
+        //        (stack >> 12 & 0xF) - 4,
+        //        (stack >> 8 & 0xF) - 4,
+        //        (stack >> 4 & 0xF) - 4,
+        //        (stack & 0xF) - 4
+        //    };
+        //}
 
         public static int SetColumnHeight(int stack, int column, int height)
         {
@@ -71,8 +77,10 @@ namespace TetrisPageRank
             return stack & ~(0xF << bitsToShift) | columnHeight;
         }
 
-        public static string StackToString(int[] digits)
+        public static string StackToString(int a, int b, int c, int d, int e, int f, int g, int h)
         {
+            ReadOnlySpan<int> digits = stackalloc[] { a, b, c, d, e, f, g, h };
+
             var surface = Enumerable.Repeat(string.Empty, 9).ToArray();
 
             for (int i = 0; i < digits.Length; i++)
