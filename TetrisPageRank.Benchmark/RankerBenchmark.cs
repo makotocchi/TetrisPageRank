@@ -5,7 +5,6 @@ using System.Diagnostics;
 
 namespace TetrisPageRank.Benchmark
 {
-    [SimpleJob(RunStrategy.ColdStart, launchCount:10)]
     public class RankerBenchmark
     {
         Ranker ranker = new Ranker();
@@ -13,6 +12,7 @@ namespace TetrisPageRank.Benchmark
         [Benchmark]
         public void Iterate()
         {
+            Ranks.Initialize();
             ranker.Iterate(10);
         }
     }

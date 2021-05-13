@@ -1,7 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using TetrisPageRank.Models;
 
@@ -9,43 +8,6 @@ namespace TetrisPageRank
 {
     public class Ranker
     {
-        public Iteration CurrentIteration { get; private set; }
-
-        public Ranker(string iterationFileName = null)
-        {
-            if (string.IsNullOrEmpty(iterationFileName) || !File.Exists(iterationFileName))
-            {
-                CurrentIteration = new Iteration();
-                CurrentIteration.Initialize();
-            }
-            else
-            {
-                using var openFileStream = new StreamReader(File.OpenRead(iterationFileName));
-                using var reader = new JsonTextReader(openFileStream);
-                CurrentIteration = new Iteration();
-
-                reader.Read(); // {
-                reader.Read(); // "iterationCount"
-
-                CurrentIteration.iterationCount = reader.ReadAsInt32().Value;
-
-                reader.Read(); // "stackRanks"
-                reader.Read(); // {
-
-                CurrentIteration.stackRanks = new Dictionary<int, float>(Iteration.stackCount);
-
-                for (int i = 0; i < Iteration.stackCount; i++)
-                {
-                    reader.Read();
-                    var stack = int.Parse(reader.Value.ToString());
-
-                    var rank = (float)reader.ReadAsDouble();
-
-                    CurrentIteration.stackRanks.Add(stack, rank);
-                }
-            }
-        }
-
         public void Iterate(int n)
         {
             if (n <= 0)
@@ -54,25 +16,38 @@ namespace TetrisPageRank
             }
 
             Console.WriteLine($"Iterating {n} times.");
-            
-            Iteration newIteration = CurrentIteration.Clone();
+
+            var stopwatch = new Stopwatch();
 
             for (int i = 0; i < n; i++)
             {
-                newIteration.iterationCount++;
-                
-                Console.WriteLine($"Iteration {newIteration.iterationCount}");
+                stopwatch.Restart();
 
-                Parallel.ForEach(CurrentIteration.stackRanks, stack =>
+                if (i > 0)
                 {
-                    newIteration.stackRanks[stack.Key] = Rank(stack.Key);
+                    // Swap ranks list to avoid allocating more memory
+                    List<float> aux = Ranks.Current;
+                    Ranks.Current = Ranks.Next;
+                    Ranks.Next = aux;
+                }
+
+                Console.WriteLine($"Iteration {i}");
+
+                //foreach (var index in Ranks.Indexes)
+                //{
+                //    Ranks.Next[index.Value] = Rank(index.Key);
+
+                //}
+
+                Parallel.ForEach(Ranks.Indexes, index =>
+                {
+                    // { stack, index } 
+
+                    Ranks.Next[index.Value] = Rank(index.Key);
                 });
 
-                var auxIteration = newIteration;
-                newIteration = CurrentIteration;
-                CurrentIteration = auxIteration;
-
-                newIteration.iterationCount = CurrentIteration.iterationCount;
+                stopwatch.Stop();
+                Console.WriteLine($"Time elapsed: {stopwatch.Elapsed}");
             }
         }
 
@@ -90,23 +65,7 @@ namespace TetrisPageRank
 
         private float RankPiece(int stack, Piece piece)
         {
-            var bestRank = 0f;
-
-            foreach (var generatedStack in piece.Controller.GetPossibleStacks(stack))
-            {
-                if (stack == generatedStack)
-                {
-                    continue;
-                }
-
-                var rank = CurrentIteration.stackRanks[generatedStack];
-                if (rank > bestRank)
-                {
-                    bestRank = rank;
-                }
-            }
-
-            return bestRank;
+            return piece.Controller.GetBestPossibleRank(stack);
         }
     }
 }

@@ -6,6 +6,89 @@ namespace TetrisPageRank.Controllers
 {
     public class PieceLController : IPieceController
     {
+        public float GetBestPossibleRank(int stack)
+        {
+            ReadOnlySpan<int> digits = stackalloc[]
+            {
+                TetrisStack.GetReadableDigit(stack, 0),
+                TetrisStack.GetReadableDigit(stack, 1),
+                TetrisStack.GetReadableDigit(stack, 2),
+                TetrisStack.GetReadableDigit(stack, 3),
+                TetrisStack.GetReadableDigit(stack, 4),
+                TetrisStack.GetReadableDigit(stack, 5),
+                TetrisStack.GetReadableDigit(stack, 6),
+                TetrisStack.GetReadableDigit(stack, 7)
+            };
+            
+            float bestRank = 0;
+
+            for (int i = 0; i <= 6; i++)
+            {
+                if (!IsDrop0Possible(digits, i))
+                {
+                    continue;
+                }
+
+                int newStack = Drop0(stack, i);
+                float rank = Ranks.Current[Ranks.Indexes[newStack]];
+
+                if (rank > bestRank)
+                {
+                    bestRank = rank;
+                }
+            }
+
+            for (int i = 0; i <= 7; i++)
+            {
+                if (!IsDrop90Possible(digits, i))
+                {
+                    continue;
+                }
+
+                int newStack = Drop90(stack, i);
+                float rank = Ranks.Current[Ranks.Indexes[newStack]];
+
+                if (rank > bestRank)
+                {
+                    bestRank = rank;
+                }
+            }
+
+            for (int i = 0; i <= 6; i++)
+            {
+                if (!IsDrop180Possible(digits, i))
+                {
+                    continue;
+                }
+
+                int newStack = Drop180(stack, i);
+                float rank = Ranks.Current[Ranks.Indexes[newStack]];
+
+                if (rank > bestRank)
+                {
+                    bestRank = rank;
+                }
+            }
+
+            for (int i = 0; i <= 7; i++)
+            {
+                if (!IsDrop270Possible(digits, i))
+                {
+                    continue;
+                }
+
+                int newStack = Drop270(stack, i);
+                float rank = Ranks.Current[Ranks.Indexes[newStack]];
+
+                if (rank > bestRank)
+                {
+                    bestRank = rank;
+                }
+            }
+
+            return bestRank;
+        }
+
         public List<int> GetPossibleStacks(int stack)
         {
             var possibleStacks = new List<int>();

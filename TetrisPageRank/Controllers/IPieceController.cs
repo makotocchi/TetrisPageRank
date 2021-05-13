@@ -7,5 +7,6 @@ namespace TetrisPageRank.Controllers
     {
         List<TetrisDrop> GetPossibleDrops(int stack);
         List<int> GetPossibleStacks(int stack);
+        float GetBestPossibleRank(int stack);
     }
 }

@@ -11,53 +11,24 @@ namespace TetrisPageRank
     {
         public static void Main()
         {
-            //var filename = @"C:\Users\Renam\Documents\GitHub\tetrisrank\test_n1_output.txt";
-
-            //var engine = new FileHelperAsyncEngine<RankingResult>();
-            //var dict = new Dictionary<string, float>();
-            //using (engine.BeginReadFile(filename))
-            //{
-            //    foreach (RankingResult rankingResult in engine)
-            //    {
-            //        dict.Add(rankingResult.Surface, rankingResult.Rank);
-            //    }
-            //}
-
             Console.WriteLine("Initializing...");
 
             var stopwatch = new Stopwatch();
-
             stopwatch.Start();
+            {
+                Ranks.Initialize();
 
-            var filename = @"C:\Users\Renam\Desktop\final_test_fix.json";
-            var pageRank = new Ranker(filename);
+                var ranker = new Ranker();
 
-            Console.WriteLine($"Current iteration: {pageRank.CurrentIteration.iterationCount}");
+                ranker.Iterate(50);
 
+                //Ranks.InitializeFromFile("ranks.dat");
+                //Ranks.SaveResults("ranks.dat");
+            }
             stopwatch.Stop();
 
             Console.WriteLine($"Time elapsed: {stopwatch.Elapsed}");
-
-            pageRank.Iterate(50);
-            pageRank.CurrentIteration.Save(filename);
-
             Console.WriteLine("All done.");
-
-            //var surface = new int[] { 0, 2, -2, 1, 0, -1, 0, 0 };
-
-            //PrintSurface(surface);
-
-            //var intSurface = TetrisStack.Create(surface);
-
-            //var controller = new PieceJController();
-            //var possibleSurfaces = controller.GetPossibleDrops(intSurface);
-
-            //foreach (var item in possibleSurfaces)
-            //{
-            //    Console.WriteLine($"Column {item.Column}");
-            //    Console.WriteLine($"Orientation {item.Orientation} degrees");
-            //    PrintSurface(TetrisStack.GetReadableDigits(item.TetrisStack));
-            //}
         }
     }
 }
