@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Serilog;
+using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace TetrisPageRank
 {
@@ -11,23 +8,24 @@ namespace TetrisPageRank
     {
         public static void Main()
         {
-            Console.WriteLine("Initializing...");
+            Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
+            
+            Log.Information("Initializing...");
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            {
-                Ranks.Initialize();
+            
+            Ranks.Initialize();
+            //Ranks.InitializeFromFile("ranks100.dat");
 
-                var ranker = new Ranker();
+            Ranker.Iterate(150);
 
-                ranker.Iterate(50);
-
-                //Ranks.InitializeFromFile("ranks.dat");
-                //Ranks.SaveResults("ranks.dat");
-            }
+            //Ranks.SaveResults("ranks250.dat");
+            
             stopwatch.Stop();
 
-            Console.WriteLine($"Time elapsed: {stopwatch.Elapsed}");
+            Log.Information("Time elapsed: {Elapsed}", stopwatch.Elapsed);
+            Console.WriteLine();
             Console.WriteLine("All done.");
         }
     }

@@ -1,4 +1,4 @@
-﻿namespace TetrisPageRank.Models
+﻿namespace TetrisPageRank
 {
     public class TetrisDrop
     {

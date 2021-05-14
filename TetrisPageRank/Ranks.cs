@@ -10,22 +10,22 @@ namespace TetrisPageRank
     public static class Ranks
     {
         public const int STACK_COUNT = 43046721; // 9^8 
-        public static List<float> Current;
-        public static List<float> Next;
-        public static Dictionary<int, int> Indexes;
+        private static List<float> Current { set; get; }
+        private static List<float> Next { set; get; }
+        public static Dictionary<int, int> Indexes { private set; get; }
 
         public static void Initialize()
         {
             Indexes = CreateIndexDictionary();
-            Current = CreateRandomRankList();
-            Next = CreateNewList();
+            Current = CreateRandomizedRankList();
+            Next = CreateZeroedRankList();
         }
 
         public static void InitializeFromFile(string rankFileName)
         {
             Indexes = CreateIndexDictionary();
             Current = LoadResults(rankFileName);
-            Next = CreateNewList();
+            Next = CreateZeroedRankList();
         }
 
         public static void SaveResults(string rankFileName)
@@ -38,6 +38,24 @@ namespace TetrisPageRank
             using var openFileStream = File.Create(rankFileName);
             var serializer = new BinarySerializer();
             serializer.Serialize(openFileStream, Current);
+        }
+
+        public static void UpdateCurrentRankList()
+        {
+            // Swap ranks list to avoid allocating more memory
+            List<float> aux = Current;
+            Current = Next;
+            Next = aux;
+        }
+
+        public static float GetCurrentRank(int stack)
+        {
+            return Current[Indexes[stack]];
+        }
+
+        public static void SetNextRank(int stack, float rank)
+        {
+            Next[Indexes[stack]] = rank;
         }
 
         private static Dictionary<int, int> CreateIndexDictionary()
@@ -61,7 +79,7 @@ namespace TetrisPageRank
                                     {
                                         for (int h = -4; h <= 4; h++)
                                         {
-                                            dic.Add(TetrisStack.CreateStack(a, b, c, d, e, f, g, h), i++);
+                                            dic.Add(TetrisStackHelper.CreateStack(a, b, c, d, e, f, g, h), i++);
                                         }
                                     }
                                 }
@@ -74,7 +92,7 @@ namespace TetrisPageRank
             return dic;
         }
 
-        private static List<float> CreateRandomRankList()
+        private static List<float> CreateRandomizedRankList()
         {
             var randomizer = RandomizerFactory.GetRandomizer(new FieldOptionsFloat
             {
@@ -94,7 +112,7 @@ namespace TetrisPageRank
             return rankList;
         }
 
-        private static List<float> CreateNewList()
+        private static List<float> CreateZeroedRankList()
         {
             var rankList = new List<float>();
 

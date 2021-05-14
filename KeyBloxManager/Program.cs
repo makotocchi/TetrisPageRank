@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using TetrisPageRank;
-using TetrisPageRank.Models;
 
 namespace KeyBloxManager
 {
@@ -17,7 +16,7 @@ namespace KeyBloxManager
             int[] columns = new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             int stack = CreateNewStack();
 
-            Ranker ranker = new Ranker(@"C:\Users\Renam\Desktop\final_test_fix.json");
+            Ranker ranker = new Ranker();
 
             while (true)
             {
@@ -43,7 +42,7 @@ namespace KeyBloxManager
                     }
                 }
 
-                List<TetrisDrop> possibleDrops = piece.Controller.GetPossibleDrops(stack);
+                List<TetrisDrop> possibleDrops = piece.Service.GetPossibleDrops(stack);
 
                 Piece.AllDictionary.TryGetValue(keyblox.GetHeldPiece().GetName(), out var heldPiece);
 
@@ -59,11 +58,11 @@ namespace KeyBloxManager
                 
                 if (heldPiece != null)
                 {
-                    possibleDrops.AddRange(heldPiece.Controller.GetPossibleDrops(stack));
+                    possibleDrops.AddRange(heldPiece.Service.GetPossibleDrops(stack));
                 }
                 else
                 {
-                    possibleDrops.AddRange(lookahead[0].Controller.GetPossibleDrops(stack));
+                    possibleDrops.AddRange(lookahead[0].Service.GetPossibleDrops(stack));
                 }
 
                 TetrisDrop bestDrop = GetBestDrop(ranker, possibleDrops);
@@ -100,7 +99,7 @@ namespace KeyBloxManager
 
         private static int CreateNewStack()
         {
-            return TetrisStack.CreateStack(0, 0, 0, 0, 0, 0, 0, 0);
+            return TetrisStackHelper.CreateStack(0, 0, 0, 0, 0, 0, 0, 0);
         }
 
         private static TetrisDrop GetBestDrop(Ranker ranker, IEnumerable<TetrisDrop> possibleDrops)
@@ -110,7 +109,7 @@ namespace KeyBloxManager
 
             foreach (var drop in possibleDrops)
             {
-                var rank = ranker.CurrentIteration.stackRanks[drop.TetrisStack];
+                var rank = Ranks.GetCurrentRank(drop.TetrisStack);
 
                 if (rank > bestRank)
                 {
@@ -134,7 +133,7 @@ namespace KeyBloxManager
 
             foreach (var drop in possibleDrops)
             {
-                var futurePossibleDrops = preview.First().Controller.GetPossibleDrops(drop.TetrisStack);
+                var futurePossibleDrops = preview.First().Service.GetPossibleDrops(drop.TetrisStack);
                 if (!futurePossibleDrops.Any())
                 {
                     continue;
@@ -147,7 +146,7 @@ namespace KeyBloxManager
                     continue;
                 }
 
-                var rank = ranker.CurrentIteration.stackRanks[currentDrop.TetrisStack];
+                var rank = Ranks.GetCurrentRank(drop.TetrisStack);
 
                 if (rank > bestRank)
                 {
@@ -302,7 +301,7 @@ namespace KeyBloxManager
                 }
             }
 
-            return TetrisStack.CreateStack(stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7]);
+            return TetrisStackHelper.CreateStack(stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7]);
         }
 
         public static void ClearLines(int[] columns, int n)

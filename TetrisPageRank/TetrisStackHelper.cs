@@ -4,7 +4,7 @@ using System.Text;
 
 namespace TetrisPageRank
 {
-    public static class TetrisStack
+    public static class TetrisStackHelper
     {
         public static int CreateStack(int a, int b, int c, int d, int e, int f, int g, int h)
         {
@@ -18,25 +18,10 @@ namespace TetrisPageRank
                    h + 4;
         }
 
-        public static int GetReadableDigit(int stack, int i)
+        public static int GetReadableDigit(int stack, int column)
         {
-            return (stack >> (28 - i * 4) & 0xF) - 4;
+            return (stack >> (28 - column * 4) & 0xF) - 4;
         }
-
-        //public static int[] GetReadableDigits(int stack)
-        //{
-        //    return new[]
-        //    {
-        //        (stack >> 28 & 0xF) - 4,
-        //        (stack >> 24 & 0xF) - 4,
-        //        (stack >> 20 & 0xF) - 4,
-        //        (stack >> 16 & 0xF) - 4,
-        //        (stack >> 12 & 0xF) - 4,
-        //        (stack >> 8 & 0xF) - 4,
-        //        (stack >> 4 & 0xF) - 4,
-        //        (stack & 0xF) - 4
-        //    };
-        //}
 
         public static int SetColumnHeight(int stack, int column, int height)
         {
@@ -56,13 +41,13 @@ namespace TetrisPageRank
             return stack & ~(0xF << bitsToShift) | shiftedHeight;
         }
 
-        public static int ModifyColumnHeight(int stack, int column, int delta)
+        public static int AlterColumnHeight(int stack, int column, int units)
         {
             var bitsToShift = (8 - column) * 4 - 4;
 
             var columnHeight = stack >> bitsToShift & 0xF;
 
-            var futureHeight = columnHeight + delta;
+            var futureHeight = columnHeight + units;
 
             if (futureHeight > 8)
             {
