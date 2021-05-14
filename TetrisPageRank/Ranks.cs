@@ -9,53 +9,59 @@ namespace TetrisPageRank
 {
     public static class Ranks
     {
-        public const int STACK_COUNT = 43046721; // 9^8 
-        private static List<float> Current { set; get; }
-        private static List<float> Next { set; get; }
         public static Dictionary<int, int> Indexes { private set; get; }
+
+        private static List<float> _current;
+        private static List<float> _next;
+
+        private const int STACK_COUNT = 43046721; // 9^8 
 
         public static void Initialize()
         {
             Indexes = CreateIndexDictionary();
-            Current = CreateRandomizedRankList();
-            Next = CreateZeroedRankList();
+            _current = CreateRandomizedRankList();
+            _next = CreateZeroedRankList();
         }
 
-        public static void InitializeFromFile(string rankFileName)
+        public static void InitializeFromFile(string rankFileName, bool isPlaying = false)
         {
             Indexes = CreateIndexDictionary();
-            Current = LoadResults(rankFileName);
-            Next = CreateZeroedRankList();
+            _current = LoadResults(rankFileName);
+
+            if (!isPlaying)
+            {
+                _next = CreateZeroedRankList();
+            }
         }
 
         public static void SaveResults(string rankFileName)
         {
-            if (Current == null)
+            if (_current == null)
             {
                 throw new Exception("The ranks were not initialized.");
             }
 
             using var openFileStream = File.Create(rankFileName);
             var serializer = new BinarySerializer();
-            serializer.Serialize(openFileStream, Current);
+            serializer.Serialize(openFileStream, _current);
         }
 
         public static void UpdateCurrentRankList()
         {
             // Swap ranks list to avoid allocating more memory
-            List<float> aux = Current;
-            Current = Next;
-            Next = aux;
+            List<float> aux = _current;
+            _current = _next;
+            _next = aux;
         }
 
         public static float GetCurrentRank(int stack)
         {
-            return Current[Indexes[stack]];
+            return _current[Indexes[stack]];
         }
 
         public static void SetNextRank(int stack, float rank)
         {
-            Next[Indexes[stack]] = rank;
+            _next[Indexes[stack]] = rank;
         }
 
         private static Dictionary<int, int> CreateIndexDictionary()
