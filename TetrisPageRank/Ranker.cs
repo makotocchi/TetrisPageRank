@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace TetrisPageRank
 {
-    public class Ranker
+    public static class Ranker
     {
         public static void Iterate(int n)
         {

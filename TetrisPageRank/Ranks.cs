@@ -111,7 +111,8 @@ namespace TetrisPageRank
 
             for (int i = 0; i < STACK_COUNT; i++)
             {
-                float rank = randomizer.Generate().Value;
+                //float rank = randomizer.Generate().Value;
+                float rank = 1;
                 rankList.Add(rank);
             }
 

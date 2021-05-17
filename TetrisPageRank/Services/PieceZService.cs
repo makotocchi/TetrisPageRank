@@ -40,36 +40,37 @@ namespace TetrisPageRank.Services
             return bestRank;
         }
 
-        public override List<TetrisDrop> GetPossibleDrops(int stack)
+        public override List<TetrisDrop> GetPossibleDrops(int[] columns)
         {
             var possibleStacks = new List<TetrisDrop>();
 
-            ReadOnlySpan<int> digits = stackalloc[]
-            {
-                TetrisStackHelper.GetReadableDigit(stack, 0),
-                TetrisStackHelper.GetReadableDigit(stack, 1),
-                TetrisStackHelper.GetReadableDigit(stack, 2),
-                TetrisStackHelper.GetReadableDigit(stack, 3),
-                TetrisStackHelper.GetReadableDigit(stack, 4),
-                TetrisStackHelper.GetReadableDigit(stack, 5),
-                TetrisStackHelper.GetReadableDigit(stack, 6),
-                TetrisStackHelper.GetReadableDigit(stack, 7)
-            };
-
             for (int i = 0; i <= 6; i++)
             {
-                if (IsDrop0Possible(digits, i))
+                if (columns[i] == columns[i + 1] + 1 && columns[i + 1] == columns[i + 2] && columns[i + 1] <= 17)
                 {
-                    possibleStacks.Add(new TetrisDrop(Drop0(stack, i), 0, i, Piece.Z));
+                    var newColumns = new int[columns.Length];
+                    Array.Copy(columns, newColumns, columns.Length);
+
+                    newColumns[i] += 1;
+                    newColumns[i + 1] += 2;
+                    newColumns[i + 2] += 1;
+
+                    possibleStacks.Add(new TetrisDrop(newColumns, 0, i, Piece.Z));
                 }
 
             }
 
             for (int i = 0; i <= 7; i++)
             {
-                if (IsDrop90Possible(digits, i))
+                if (columns[i] == columns[i + 1] - 1 && columns[i + 1] <= 17 )
                 {
-                    possibleStacks.Add(new TetrisDrop(Drop90(stack, i), 90, i, Piece.Z));
+                    var newColumns = new int[columns.Length];
+                    Array.Copy(columns, newColumns, columns.Length);
+
+                    newColumns[i] += 2;
+                    newColumns[i + 1] += 2;
+
+                    possibleStacks.Add(new TetrisDrop(newColumns, 90, i, Piece.Z));
                 }
 
             }

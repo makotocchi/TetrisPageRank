@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using TetrisPageRank;
 
@@ -11,305 +11,154 @@ namespace KeyBloxManager
     {
         private static void Main()
         {
-            var keyblox = new KeyBlox();
+            Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
+
+            var keyblox = new KeyBlox(4);
+            keyblox.Focus();
+
+            Log.Information("Initializing");
+            Ranks.InitializeFromFile(@"C:\Users\Renam\source\repos\TetrisPageRank\TetrisPageRank\bin\Release\net5.0\ranks50_without_random_no_same_stack.dat", true);
+            Log.Information("Done, ready to play");
 
             int[] columns = new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            int stack = CreateNewStack();
 
-            Ranker ranker = new Ranker();
+            while (!keyblox.IsPlayable())
+            {
+            }
+
+            Log.Information("Let's play");
 
             while (true)
             {
-                Thread.Sleep(1000);
+                Thread.Sleep(20);
 
                 Piece piece = Piece.AllDictionary[keyblox.GetCurrentPiece().GetName()];
-
-                if (piece.Name == 'I' && columns.All(x => x > 5))
-                {
-                    keyblox.DoTetris();
-                    ClearLines(columns, 4);
-                    continue;
-                }
-
-                if (columns[7] - columns[8] > 5 && columns.Take(8).All(x => x > 5))
-                {
-                    if (piece.Name == 'T' || piece.Name == 'L' || piece.Name == 'J')
-                    {
-                        keyblox.RotatePiece(270);
-                        keyblox.DropPiece(8);
-                        ClearLines(columns, 1);
-                        continue;
-                    }
-                }
-
-                List<TetrisDrop> possibleDrops = piece.Service.GetPossibleDrops(stack);
-
-                Piece.AllDictionary.TryGetValue(keyblox.GetHeldPiece().GetName(), out var heldPiece);
-
-                if (heldPiece != null && heldPiece.Name == 'I' && columns.All(x => x > 5))
-                {
-                    keyblox.HoldPiece();
-                    keyblox.DoTetris();
-                    ClearLines(columns, 4);
-                    continue;
-                }
-
                 List<Piece> lookahead = keyblox.GetPreviewedPieces().Select(x => Piece.AllDictionary[x.GetName()]).ToList();
+                TetrisDrop bestDrop = null;
                 
-                if (heldPiece != null)
-                {
-                    possibleDrops.AddRange(heldPiece.Service.GetPossibleDrops(stack));
-                }
-                else
-                {
-                    possibleDrops.AddRange(lookahead[0].Service.GetPossibleDrops(stack));
-                }
-
-                TetrisDrop bestDrop = GetBestDrop(ranker, possibleDrops);
+                bestDrop = GetBestPossibleDrop(columns, piece, lookahead);
 
                 if (bestDrop != null)
                 {
-                    if (bestDrop.Piece == heldPiece)
-                    {
-                        keyblox.HoldPiece();
-                        piece = heldPiece;
-                    }
-                    else if (bestDrop.Piece == lookahead[0] && bestDrop.Piece != piece)
-                    {
-                        keyblox.HoldPiece();
-                        piece = lookahead[0];
-                    }
-
-                    DropPiece(keyblox, bestDrop);
-                    UpdateColumns(piece, bestDrop, columns);
-                    stack = UpdateStack(columns);
+                    //Log.Information("Rank: {0} | Piece: {1}", GetRank(columns), bestDrop.Piece.Name);
+                    //Log.Information("Columns: {0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}",
+                    //    bestDrop.Columns[0],
+                    //    bestDrop.Columns[1],
+                    //    bestDrop.Columns[2],
+                    //    bestDrop.Columns[3],
+                    //    bestDrop.Columns[4],
+                    //    bestDrop.Columns[5],
+                    //    bestDrop.Columns[6],
+                    //    bestDrop.Columns[7],
+                    //    bestDrop.Columns[8]);
+                    keyblox.ExecuteDrop(bestDrop);
+                    columns = bestDrop.Columns;
                 }
                 else
                 {
-                    keyblox.HoldPiece();
+                    Log.Information("-----GAME RESULTS-----");
+                    Log.Information("Lines cleared: {0}", keyblox.GetLineCount());
+                    Log.Information("Pieces used: {0}", keyblox.GetPieceCount());
+
+                    break;
+
+                    columns = new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                    keyblox.Reset();
+                    Thread.Sleep(500);
+                    while (!keyblox.IsPlayable())
+                    {
+                    }
                 }
             }
         }
 
-        private static void DropPiece(KeyBlox keyblox, TetrisDrop bestDrop)
+        private static TetrisDrop GetBestPossibleDrop(int[] columns, Piece piece, List<Piece> lookahead)
         {
-            keyblox.RotatePiece(bestDrop.Orientation);
-            keyblox.DropPiece(bestDrop.Column);
-        }
+            List<TetrisDrop> drops = piece.Service.GetPossibleDrops(columns);
 
-        private static int CreateNewStack()
-        {
-            return TetrisStackHelper.CreateStack(0, 0, 0, 0, 0, 0, 0, 0);
-        }
-
-        private static TetrisDrop GetBestDrop(Ranker ranker, IEnumerable<TetrisDrop> possibleDrops)
-        {
             TetrisDrop bestDrop = null;
-            float bestRank = 0;
+            float bestRank = -1;
 
-            foreach (var drop in possibleDrops)
+            foreach (TetrisDrop drop in drops)
             {
-                var rank = Ranks.GetCurrentRank(drop.TetrisStack);
-
-                if (rank > bestRank)
+                var futureDrops = GetPossibleDrops(drop.Columns, lookahead);
+                if (futureDrops.Count == 0)
                 {
-                    bestRank = rank;
+                    continue;
+                }
+
+                var bestFutureRank = GetBestRankFromDropsList(futureDrops);
+                if (bestFutureRank > bestRank)
+                {
+                    bestRank = bestFutureRank;
                     bestDrop = drop;
                 }
+            }
+
+            if (bestRank == 0)
+            {
+                var random = new Random();
+                bestDrop = drops[random.Next(drops.Count)];
             }
 
             return bestDrop;
         }
 
-        private static TetrisDrop GetBestDropWithLookAhead(Ranker ranker, IEnumerable<TetrisDrop> possibleDrops, IEnumerable<Piece> preview)
+        private static List<TetrisDrop> GetPossibleDrops(int[] columns, List<Piece> piecesInOrder)
         {
-            if (preview.Count() == 0)
+            if (piecesInOrder.Count > 1)
             {
-                return GetBestDrop(ranker, possibleDrops);
+                var possibleDrops = new List<TetrisDrop>();
+
+                List<TetrisDrop> futureDrops = piecesInOrder.First().Service.GetPossibleDrops(columns);
+                foreach (var drop in futureDrops)
+                {
+                    possibleDrops.AddRange(GetPossibleDrops(drop.Columns, piecesInOrder.Skip(1).ToList()));
+                }
+
+                return possibleDrops;
             }
-
-            TetrisDrop bestDrop = possibleDrops.First();
-            float bestRank = 0;
-
-            foreach (var drop in possibleDrops)
+            else
             {
-                var futurePossibleDrops = preview.First().Service.GetPossibleDrops(drop.TetrisStack);
-                if (!futurePossibleDrops.Any())
-                {
-                    continue;
-                }
+                return piecesInOrder.Single().Service.GetPossibleDrops(columns);
+            }
+        }
 
-                var currentDrop = GetBestDropWithLookAhead(ranker, futurePossibleDrops, preview.Skip(1));
+        private static float GetBestRankFromDropsList(List<TetrisDrop> drops)
+        {
+            float bestRank = -1;
 
-                if (currentDrop == null)
-                {
-                    continue;
-                }
+            Log.Information("{0} possible futures", drops.Count);
 
-                var rank = Ranks.GetCurrentRank(drop.TetrisStack);
+            foreach (TetrisDrop drop in drops)
+            {
+                var rank = GetRank(drop.Columns);
 
                 if (rank > bestRank)
                 {
                     bestRank = rank;
-                    bestDrop = drop;
                 }
             }
 
-            return bestDrop;
+            return bestRank;
         }
 
-        public static void UpdateColumns(Piece piece, TetrisDrop drop, int[] columns)
+        private static float GetRank(int[] columns)
         {
-            int[] heightDeltas = new int[] { };
-
-            if (piece == Piece.I)
-            {
-                if (drop.Orientation == 0)
-                {
-                    heightDeltas = new int[] { 1, 1, 1, 1 };
-                }
-
-                if (drop.Orientation == 90)
-                {
-                    heightDeltas = new int[] { 4 };
-                }
-            }
-
-            if (piece == Piece.L)
-            {
-                if (drop.Orientation == 0)
-                {
-                    heightDeltas = new int[] { 1, 1, 2 };
-                }
-
-                if (drop.Orientation == 90)
-                {
-                    heightDeltas = new int[] { 1, 3 };
-                }
-
-                if (drop.Orientation == 180)
-                {
-                    heightDeltas = new int[] { 2, 1, 1 };
-                }
-
-                if (drop.Orientation == 270)
-                {
-                    heightDeltas = new int[] { 3, 1 };
-                }
-            }
-
-            if (piece == Piece.O)
-            {
-                heightDeltas = new int[] { 2, 2 };
-            }
-
-            if (piece == Piece.Z)
-            {
-                if (drop.Orientation == 0)
-                {
-                    heightDeltas = new int[] { 1, 2, 1 };
-                }
-
-                if (drop.Orientation == 90)
-                {
-                    heightDeltas = new int[] { 2, 2 };
-                }
-            }
-
-            if (piece == Piece.T)
-            {
-                if (drop.Orientation == 0)
-                {
-                    heightDeltas = new int[] { 1, 2, 1 };
-                }
-
-                if (drop.Orientation == 90)
-                {
-                    heightDeltas = new int[] { 1, 3 };
-                }
-
-                if (drop.Orientation == 180)
-                {
-                    heightDeltas = new int[] { 1, 2, 1 };
-                }
-
-                if (drop.Orientation == 270)
-                {
-                    heightDeltas = new int[] { 3, 1 };
-                }
-            }
-
-            if (piece == Piece.J)
-            {
-                if (drop.Orientation == 0)
-                {
-                    heightDeltas = new int[] { 2, 1, 1 };
-                }
-
-                if (drop.Orientation == 90)
-                {
-                    heightDeltas = new int[] { 1, 3 };
-                }
-
-                if (drop.Orientation == 180)
-                {
-                    heightDeltas = new int[] { 1, 1, 2 };
-                }
-
-                if (drop.Orientation == 270)
-                {
-                    heightDeltas = new int[] { 3, 1 };
-                }
-            }
-
-            if (piece == Piece.S)
-            {
-                if (drop.Orientation == 0)
-                {
-                    heightDeltas = new int[] { 1, 2, 1 };
-                }
-
-                if (drop.Orientation == 90)
-                {
-                    heightDeltas = new int[] { 2, 2 };
-                }
-            }
-
-            var columnIndex = drop.Column;
-            for (int i = 0; i < heightDeltas.Length; i++)
-            {
-                columns[columnIndex++] += heightDeltas[i];
-            }
-        }
-
-        public static int UpdateStack(int[] columns)
-        {
-            var stack = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+            Span<int> stack = stackalloc[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 
             for (int i = 1; i < columns.Length; i++)
             {
                 stack[i - 1] = columns[i] - columns[i - 1];
 
-                if (stack[i - 1] > 4)
+                if (stack[i - 1] > 4 || stack[i - 1] < -4)
                 {
-                    stack[i - 1] = 4;
-                }
-
-                if (stack[i - 1] < -4)
-                {
-                    stack[i - 1] = -4;
+                    return 0;
                 }
             }
 
-            return TetrisStackHelper.CreateStack(stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7]);
-        }
-
-        public static void ClearLines(int[] columns, int n)
-        {
-            for (int i = 0; i < columns.Length; i++)
-            {
-                columns[i] -= n;
-            }
+            var rankableStack = TetrisStackHelper.CreateStack(stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7]);
+            return Ranks.GetCurrentRank(rankableStack);
         }
     }
 }

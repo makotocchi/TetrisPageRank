@@ -16,20 +16,17 @@ namespace KeyBloxManager
             Orientation = orientation;
         }
 
-        public char GetName()
+        public char GetName() => Id switch
         {
-            return Id switch
-            {
-                PIECE_I => 'I',
-                PIECE_O => 'O',
-                PIECE_T => 'T',
-                PIECE_L => 'L',
-                PIECE_J => 'J',
-                PIECE_S => 'S',
-                PIECE_Z => 'Z',
-                _ => ' ',
-            };
-        }
+            PIECE_I => 'I',
+            PIECE_O => 'O',
+            PIECE_T => 'T',
+            PIECE_L => 'L',
+            PIECE_J => 'J',
+            PIECE_S => 'S',
+            PIECE_Z => 'Z',
+            _ => ' ',
+        };
 
         private const int PIECE_I = 0;
         private const int PIECE_O = 1;

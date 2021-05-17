@@ -1,18 +1,25 @@
-﻿namespace TetrisPageRank
+﻿using System.Collections.Generic;
+
+namespace TetrisPageRank
 {
     public class TetrisDrop
     {
-        public TetrisDrop(int stack, int orientation, int column, Piece piece)
+        public TetrisDrop(int[] columns, int orientation, int column, Piece piece)
         {
-            TetrisStack = stack;
+            Columns = columns;
             Orientation = orientation;
             Column = column;
             Piece = piece;
         }
 
-        public int TetrisStack { get; }
+        public int[] Columns { get; }
         public int Orientation { get; }
         public int Column { get; }
         public Piece Piece { get; }
+
+        public override string ToString()
+        {
+            return $"{Piece} {Orientation} {Column}";
+        }
     }
 }

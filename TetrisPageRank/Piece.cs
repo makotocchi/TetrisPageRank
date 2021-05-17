@@ -82,5 +82,10 @@ namespace TetrisPageRank
 
         public static readonly Piece[] All = new Piece[] { I, L, O, Z, T, J, S };
         public static readonly Dictionary<char, Piece> AllDictionary = All.ToDictionary(x => x.Name);
+
+        public override string ToString()
+        {
+            return Name.ToString();
+        }
     }
 }

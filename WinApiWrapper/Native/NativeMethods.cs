@@ -22,5 +22,8 @@ namespace WinApiWrapper.Native
 
         [DllImport(USER32)]
         public static extern IntPtr GetMessageExtraInfo();
+
+        [DllImport(USER32)]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
     }
 }

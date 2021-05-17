@@ -16,17 +16,16 @@ namespace TetrisPageRank
             stopwatch.Start();
             
             Ranks.Initialize();
-            //Ranks.InitializeFromFile("ranks100.dat");
+            //Ranks.InitializeFromFile("ranks500.dat");
 
-            Ranker.Iterate(150);
+            Ranker.Iterate(50);
 
-            //Ranks.SaveResults("ranks250.dat");
+            Ranks.SaveResults("ranks50_without_random_no_same_stack.dat");
             
             stopwatch.Stop();
 
             Log.Information("Time elapsed: {Elapsed}", stopwatch.Elapsed);
-            Console.WriteLine();
-            Console.WriteLine("All done.");
+            Log.Information("All done.");
         }
     }
 }

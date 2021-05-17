@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TetrisPageRank.Services
 {
@@ -37,34 +38,54 @@ namespace TetrisPageRank.Services
             return bestRank;
         }
 
-        public override List<TetrisDrop> GetPossibleDrops(int stack)
+        public override List<TetrisDrop> GetPossibleDrops(int[] columns)
         {
             var possibleDrops = new List<TetrisDrop>();
 
-            ReadOnlySpan<int> digits = stackalloc[]
+            if (columns.All(x => x >= 4))
             {
-                TetrisStackHelper.GetReadableDigit(stack, 0),
-                TetrisStackHelper.GetReadableDigit(stack, 1),
-                TetrisStackHelper.GetReadableDigit(stack, 2),
-                TetrisStackHelper.GetReadableDigit(stack, 3),
-                TetrisStackHelper.GetReadableDigit(stack, 4),
-                TetrisStackHelper.GetReadableDigit(stack, 5),
-                TetrisStackHelper.GetReadableDigit(stack, 6),
-                TetrisStackHelper.GetReadableDigit(stack, 7)
-            };
+                var newColumns = new int[columns.Length];
+                Array.Copy(columns, newColumns, columns.Length);
 
-            for (int i = 0; i <= 5; i++)
-            {
-                if (IsDrop0Possible(digits, i))
+                for (int i = 0; i < newColumns.Length; i++)
                 {
-                    possibleDrops.Add(new TetrisDrop(Drop0(stack, i), 0, i, Piece.I));
+                    newColumns[i] -= Math.Min(columns.Min(), 4);
+                }
+
+                possibleDrops.Add(new TetrisDrop(newColumns, 90, 9, Piece.I));
+            }
+            else
+            {
+                for (int i = 0; i <= 5; i++)
+                {
+                    if (columns[i] == columns[i + 1] && columns[i] == columns[i + 2] && columns[i] == columns[i + 3] && columns[i] <= 18)
+                    {
+                        var newColumns = new int[columns.Length];
+                        Array.Copy(columns, newColumns, columns.Length);
+
+                        newColumns[i] += 1;
+                        newColumns[i + 1] += 1;
+                        newColumns[i + 2] += 1;
+                        newColumns[i + 3] += 1;
+
+                        possibleDrops.Add(new TetrisDrop(newColumns, 0, i, Piece.I));
+                    }
+                }
+
+                for (int i = 0; i <= 8; i++)
+                {
+                    if (columns[i] <= 15)
+                    {
+                        var newColumns = new int[columns.Length];
+                        Array.Copy(columns, newColumns, columns.Length);
+
+                        newColumns[i] += 4;
+
+                        possibleDrops.Add(new TetrisDrop(newColumns, 90, i, Piece.I));
+                    }
                 }
             }
 
-            for (int i = 0; i <= 8; i++)
-            {
-                possibleDrops.Add(new TetrisDrop(Drop90(stack, i), 90, i, Piece.I));
-            }
 
             return possibleDrops;
         }

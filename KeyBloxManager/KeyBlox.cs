@@ -1,4 +1,5 @@
 ﻿using System;
+using TetrisPageRank;
 using WinApiWrapper;
 using static WinApiWrapper.Native.NativeEnums;
 
@@ -8,16 +9,12 @@ namespace KeyBloxManager
     {
         private const string PROCESS_NAME = "KeyBlox";
 
-        private readonly MemoryReader _memoryReader;
-        private readonly InputSimulator _inputSimulator;
+        private readonly MemoryReader _memoryReader = new(PROCESS_NAME);
+        private readonly WindowHelper _windowHelper = new(PROCESS_NAME);
+        private readonly InputSimulator _inputSimulator = new();
         private readonly int _previewSize;
 
-        public KeyBlox(int previewSize = 10)
-        {
-            _inputSimulator = new InputSimulator();
-            _memoryReader = new MemoryReader(PROCESS_NAME);
-            _previewSize = previewSize;
-        }
+        public KeyBlox(int previewSize = 10) => _previewSize = previewSize;
 
         public KeyBloxPiece GetCurrentPiece() => _memoryReader.ReadProcessMemory<KeyBloxPiece>(new IntPtr(MemoryAddress.CURRENT_PIECE));
 
@@ -35,32 +32,44 @@ namespace KeyBloxManager
             return pieces;
         }
 
-        public void HoldPiece()
+        public bool IsPlayable()
         {
-            _inputSimulator.SendKey(ScanCode.SPACE);
+            int menuSelection = _memoryReader.ReadProcessMemory<int>(new IntPtr(MemoryAddress.MENU_SELECTION));
+
+            if (menuSelection != 0)
+            {
+                int inputsEnabled = _memoryReader.ReadProcessMemory<int>(new IntPtr(MemoryAddress.INPUTS_ENABLED));
+
+                return inputsEnabled == 1;
+            }
+
+            return false;
         }
+
+        public int GetPieceCount() => _memoryReader.ReadProcessMemory<int>(new IntPtr(MemoryAddress.PIECE_COUNT));
+        public int GetLineCount() => _memoryReader.ReadProcessMemory<int>(new IntPtr(MemoryAddress.LINE_COUNT));
+
+        public void HoldPiece() => _inputSimulator.SendKey(ScanCode.SPACE);
 
         public void RotatePiece(int degrees)
         {
-            switch (degrees)
+            if (degrees == 90)
             {
-                case 90:
-                    _inputSimulator.SendKey(ScanCode.KEY_W);
-                    break;
-                case 180:
-                    _inputSimulator.SendKey(ScanCode.KEY_E);
-                    break;
-                case 270:
-                    _inputSimulator.SendKey(ScanCode.KEY_R);
-                    break;
-                default:
-                    break;
+                _inputSimulator.SendKey(ScanCode.KEY_W);
+            }
+            else if (degrees == 180)
+            {
+                _inputSimulator.SendKey(ScanCode.KEY_E);
+            }
+            else if (degrees == 270)
+            {
+                _inputSimulator.SendKey(ScanCode.KEY_R);
             }
         }
 
         public void DropPiece(int column)
         {
-            ScanCode[] _dropScanCodes = new[]
+            ReadOnlySpan<ScanCode> _dropScanCodes = stackalloc[]
             {
                 ScanCode.KEY_A,
                 ScanCode.KEY_S,
@@ -81,6 +90,23 @@ namespace KeyBloxManager
         {
             _inputSimulator.SendKey(ScanCode.KEY_W);
             _inputSimulator.SendKey(ScanCode.OEM_1);
+        }
+
+        public void Reset()
+        {
+            _inputSimulator.SendKey(ScanCode.ESCAPE);
+            _inputSimulator.SendKey(ScanCode.RETURN);
+        }
+
+        public void Focus()
+        {
+            _windowHelper.BringToFront();
+        }
+
+        public void ExecuteDrop(TetrisDrop drop)
+        {
+            RotatePiece(drop.Orientation);
+            DropPiece(drop.Column);
         }
     }
 }
