@@ -18,9 +18,9 @@ namespace TetrisPageRank
             Ranks.Initialize();
             //Ranks.InitializeFromFile("ranks500.dat");
 
-            Ranker.Iterate(50);
+            Ranker.Iterate(10);
 
-            Ranks.SaveResults("ranks50_without_random_no_same_stack.dat");
+            Ranks.SaveResults("ranks10.dat");
             
             stopwatch.Stop();
 

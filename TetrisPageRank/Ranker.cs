@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace TetrisPageRank
@@ -9,9 +10,12 @@ namespace TetrisPageRank
         {
             Log.Information("Iterating {n} times", n);
 
+            var stopwatch = new Stopwatch();
+
             for (int i = 1; i <= n; i++)
             {
                 Log.Information("Iteration {i}", i);
+                stopwatch.Restart();
 
                 Parallel.ForEach(Ranks.Indexes, index =>
                 {
@@ -19,6 +23,9 @@ namespace TetrisPageRank
                 });
 
                 Ranks.UpdateCurrentRankList();
+
+                stopwatch.Stop();
+                Log.Information("Time elapsed: {0}", stopwatch.Elapsed);
             }
         }
 

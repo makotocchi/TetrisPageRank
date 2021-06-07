@@ -32,6 +32,18 @@ namespace KeyBloxManager
             return pieces;
         }
 
+        public int[] GetColumn(int i)
+        {
+            var cells = new int[20];
+
+            for (int j = 0; j < cells.Length; j++)
+            {
+                cells[j] = _memoryReader.ReadProcessMemory<int>(new IntPtr(MemoryAddress.FIELD_0_0 + 4 * j + 4 * 20 * i));
+            }
+
+            return cells;
+        }
+
         public bool IsPlayable()
         {
             int menuSelection = _memoryReader.ReadProcessMemory<int>(new IntPtr(MemoryAddress.MENU_SELECTION));
@@ -94,7 +106,6 @@ namespace KeyBloxManager
 
         public void Reset()
         {
-            _inputSimulator.SendKey(ScanCode.ESCAPE);
             _inputSimulator.SendKey(ScanCode.RETURN);
         }
 

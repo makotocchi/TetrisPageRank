@@ -9,5 +9,6 @@
         public const long INPUTS_ENABLED = 0x0099FA38;
         public const long PIECE_COUNT = 0x0099FA2C;
         public const long LINE_COUNT = 0x0099FA28;
+        public const long FIELD_0_0 = 0x0099F69C;
     }
 }

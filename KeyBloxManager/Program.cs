@@ -11,13 +11,20 @@ namespace KeyBloxManager
     {
         private static void Main()
         {
-            Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
+            int gameCount = 1;
+            int pieceCount = 0;
+            int ranksIterationCount = 15;
+            int lookaheadCount = 4;
 
-            var keyblox = new KeyBlox(4);
+            Log.Logger = new LoggerConfiguration().WriteTo.File($"ranks{ranksIterationCount}_preview{lookaheadCount}.log").CreateLogger();
+
+            ILogger consoleLogger = new LoggerConfiguration().WriteTo.Console().CreateLogger();
+
+            var keyblox = new KeyBlox(lookaheadCount);
             keyblox.Focus();
 
             Log.Information("Initializing");
-            Ranks.InitializeFromFile(@"C:\Users\Renam\source\repos\TetrisPageRank\TetrisPageRank\bin\Release\net5.0\ranks50_without_random_no_same_stack.dat", true);
+            Ranks.InitializeFromFile($@"C:\Users\Renam\source\repos\TetrisPageRank\TetrisPageRank\bin\Release\net5.0\ranks{ranksIterationCount}.dat", true);
             Log.Information("Done, ready to play");
 
             int[] columns = new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -30,7 +37,7 @@ namespace KeyBloxManager
 
             while (true)
             {
-                Thread.Sleep(20);
+                //Thread.Sleep(750);
 
                 Piece piece = Piece.AllDictionary[keyblox.GetCurrentPiece().GetName()];
                 List<Piece> lookahead = keyblox.GetPreviewedPieces().Select(x => Piece.AllDictionary[x.GetName()]).ToList();
@@ -40,7 +47,7 @@ namespace KeyBloxManager
 
                 if (bestDrop != null)
                 {
-                    //Log.Information("Rank: {0} | Piece: {1}", GetRank(columns), bestDrop.Piece.Name);
+                    //Log.Information("Piece: {0}, Column: {1}", bestDrop.Piece.Name, bestDrop.Column);
                     //Log.Information("Columns: {0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}",
                     //    bestDrop.Columns[0],
                     //    bestDrop.Columns[1],
@@ -53,19 +60,52 @@ namespace KeyBloxManager
                     //    bestDrop.Columns[8]);
                     keyblox.ExecuteDrop(bestDrop);
                     columns = bestDrop.Columns;
+
+                    while (keyblox.GetPieceCount() == pieceCount)
+                    {
+                    }
+                    pieceCount++;
+
+                    for (int i = 0; i < 8; i++)
+                    {
+                        var actualColumn = keyblox.GetColumn(i);
+                        VerifyColumn(actualColumn);
+                    }
                 }
                 else
                 {
-                    Log.Information("-----GAME RESULTS-----");
+                    Log.Information("-----GAME RESULTS {0}-----", gameCount++);
                     Log.Information("Lines cleared: {0}", keyblox.GetLineCount());
                     Log.Information("Pieces used: {0}", keyblox.GetPieceCount());
 
-                    break;
+                    consoleLogger.Information("-----GAME RESULTS {0}-----", gameCount);
+                    consoleLogger.Information("Lines cleared: {0}", keyblox.GetLineCount());
+                    consoleLogger.Information("Pieces used: {0}", keyblox.GetPieceCount());
 
                     columns = new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                     keyblox.Reset();
+                    pieceCount = 0;
                     Thread.Sleep(500);
                     while (!keyblox.IsPlayable())
+                    {
+                    }
+                }
+            }
+        }
+
+        private static void VerifyColumn(int[] actualColumn)
+        {
+            bool shouldntHaveMorePieces = false;
+            for (int i = 0; i < actualColumn.Length; i++)
+            {
+                if (!shouldntHaveMorePieces && actualColumn[i] == 0)
+                {
+                    shouldntHaveMorePieces = true;
+                }
+
+                if (shouldntHaveMorePieces && actualColumn[i] > 0)
+                {
+                    while (true)
                     {
                     }
                 }
@@ -79,19 +119,35 @@ namespace KeyBloxManager
             TetrisDrop bestDrop = null;
             float bestRank = -1;
 
-            foreach (TetrisDrop drop in drops)
+            if (lookahead.Count > 0)
             {
-                var futureDrops = GetPossibleDrops(drop.Columns, lookahead);
-                if (futureDrops.Count == 0)
+                foreach (TetrisDrop drop in drops)
                 {
-                    continue;
-                }
+                    var futureDrops = GetPossibleDrops(drop.Columns, lookahead);
+                    if (futureDrops.Count == 0)
+                    {
+                        continue;
+                    }
 
-                var bestFutureRank = GetBestRankFromDropsList(futureDrops);
-                if (bestFutureRank > bestRank)
+                    var bestFutureRank = GetBestRankFromDropsList(futureDrops);
+                    if (bestFutureRank > bestRank)
+                    {
+                        bestRank = bestFutureRank;
+                        bestDrop = drop;
+                    }
+                }
+            }
+            else
+            {
+                foreach (TetrisDrop drop in drops)
                 {
-                    bestRank = bestFutureRank;
-                    bestDrop = drop;
+                    var rank = GetRank(drop.Columns);
+
+                    if (rank > bestRank)
+                    {
+                        bestRank = rank;
+                        bestDrop = drop;
+                    }
                 }
             }
 
@@ -118,17 +174,19 @@ namespace KeyBloxManager
 
                 return possibleDrops;
             }
-            else
+            else if (piecesInOrder.Count == 1)
             {
                 return piecesInOrder.Single().Service.GetPossibleDrops(columns);
+            }
+            else
+            {
+                return new List<TetrisDrop>();
             }
         }
 
         private static float GetBestRankFromDropsList(List<TetrisDrop> drops)
         {
             float bestRank = -1;
-
-            Log.Information("{0} possible futures", drops.Count);
 
             foreach (TetrisDrop drop in drops)
             {
